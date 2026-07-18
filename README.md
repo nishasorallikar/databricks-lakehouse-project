@@ -57,15 +57,15 @@ The entry point of the pipeline ingests external files from Unity Catalog (UC) V
 
 > [!NOTE]
 > **Raw Source Data Locations**
-> * **CRM System Volume Path:** `/Volumes/workspace/bronze/source_systems/source_crm/`
-> * **ERP System Volume Path:** `/Volumes/workspace/bronze/source_systems/source_erp/`
+> * **📁 CRM System Volume Path:** `/Volumes/workspace/bronze/source_systems/source_crm/`
+> * **📁 ERP System Volume Path:** `/Volumes/workspace/bronze/source_systems/source_erp/`
 
-#### Ingestion Execution Strategies
+#### 🔄 Ingestion Execution Strategies
 
 | Strategy | Notebook | Mechanism | Key Benefits |
 | :--- | :--- | :--- | :--- |
-| **Basic Approach** | [`Bronze_layer_basic.ipynb`](Bronze/Bronze_layer_basic.ipynb) | Explicit file-by-file loading via PySpark APIs | Easy to debug, clear separation of individual scripts. |
-| **Improved (Recommended)** | [`Bronze_layer_improved.ipynb`](Bronze/Bronze_layer_improved.ipynb) | Configuration-driven dynamic looping using metadata configs | Highly scalable, low maintenance, and easily supports adding new tables. |
+| 📜 **Basic Approach** | 📓 [`Bronze_layer_basic.ipynb`](Bronze/Bronze_layer_basic.ipynb) | 📥 Explicit file-by-file loading via PySpark APIs | 🟢 Easy to debug and troubleshoot<br>🟢 Clean separation of individual scripts |
+| ⚡ **Improved (Recommended)** | 📓 [`Bronze_layer_improved.ipynb`](Bronze/Bronze_layer_improved.ipynb) | ⚙️ Configuration-driven dynamic looping using metadata configs | 🚀 Highly scalable and dynamic<br>🛠️ Low maintenance<br>➕ Add new tables via list updates |
 
 *All raw outputs are saved as Delta tables under `workspace.bronze.*` with no transformations applied.*
 
@@ -84,12 +84,12 @@ This layer is responsible for data cleaning, type casting, schema reinforcement,
 
 | Source System | Raw Table (Bronze) | Standardized Table (Silver) | Transformations Applied | Notebook |
 | :---: | :--- | :--- | :--- | :--- |
-| **CRM** | `crm_cust_info` | `crm_customers` | Trims text, drops duplicate entries, cleans values. | [`silver_crm_cust_info.ipynb`](Silver/crm/silver_crm_cust_info.ipynb) |
-| **CRM** | `crm_prd_info` | `crm_products` | Extracts name, casts unit costs, maps active flags. | [`silver_crm_prd_info.ipynb`](Silver/crm/silver_crm_prd_info.ipynb) |
-| **CRM** | `crm_sales_details` | `crm_sales` | Type casts currencies, validates quantity > 0. | [`silver_crm_sales_details.ipynb`](Silver/crm/silver_crm_sales_details.ipynb) |
-| **ERP** | `erp_cust_az12` | `erp_customers` | Standardizes birthdate format, maps IDs. | [`silver_erp_cust_az12.ipynb`](Silver/erp/silver_erp_cust_az12.ipynb) |
-| **ERP** | `erp_loc_a101` | `erp_customer_location` | Normalizes state and country abbreviations. | [`silver_erp_loc_a101.ipynb`](Silver/erp/silver_erp_loc_a101.ipynb) |
-| **ERP** | `erp_px_cat_g1v2` | `erp_product_category` | Standardizes categories hierarchy. | [`silver_erp_px_cat_g1v2.ipynb`](Silver/erp/silver_erp_px_cat_g1v2.ipynb) |
+| **🏢 CRM** | 📥 `crm_cust_info` | 🧹 `crm_customers` | ✂️ Trims text fields<br>🚫 Drops duplicate entries<br>🧼 Normalizes values | 📓 [`silver_crm_cust_info.ipynb`](Silver/crm/silver_crm_cust_info.ipynb) |
+| **🏢 CRM** | 📥 `crm_prd_info` | 🧹 `crm_products` | 🏷️ Extracts names<br>💳 Casts unit costs to double<br>⏳ Maps active product dates | 📓 [`silver_crm_prd_info.ipynb`](Silver/crm/silver_crm_prd_info.ipynb) |
+| **🏢 CRM** | 📥 `crm_sales_details` | 🧹 `crm_sales` | 💵 Type casts currency fields<br>🔢 Validates quantity > 0<br>🧼 Standardizes formats | 📓 [`silver_crm_sales_details.ipynb`](Silver/crm/silver_crm_sales_details.ipynb) |
+| **🏭 ERP** | 📥 `erp_cust_az12` | 🧹 `erp_customers` | 📅 Formats birthdates to standard YYYY-MM-DD<br>🆔 Aligns customer codes | 📓 [`silver_erp_cust_az12.ipynb`](Silver/erp/silver_erp_cust_az12.ipynb) |
+| **🏭 ERP** | 📥 `erp_loc_a101` | 🧹 `erp_customer_location` | 📍 Standardizes spatial locations<br>🗺️ Normalizes country names | 📓 [`silver_erp_loc_a101.ipynb`](Silver/erp/silver_erp_loc_a101.ipynb) |
+| **🏭 ERP** | 📥 `erp_px_cat_g1v2` | 🧹 `erp_product_category` | 🗂️ Standardizes product categories & subcategories | 📓 [`silver_erp_px_cat_g1v2.ipynb`](Silver/erp/silver_erp_px_cat_g1v2.ipynb) |
 
 > [!TIP]
 > **Orchestration Tool**: Use [`silver_orchestration.ipynb`](Silver/silver_orchestration.ipynb) to trigger all six notebooks sequentially using `dbutils.notebook.run`.
@@ -104,9 +104,9 @@ Transforms standardized Silver tables into a business-level Dimensional Model op
 
 | Table Type | Table Name | Source Input Tables | Modeling Logic & Key Enhancements | Notebook |
 | :--- | :--- | :--- | :--- | :--- |
-| **Dimension** | `dim_customers` | `silver.crm_customers`<br>`silver.erp_customers`<br>`silver.erp_customer_location` | Combines CRM demographic data with ERP spatial location. Introduces surrogate keys (`customer_key`) using row numbers. | [`gold_dim_customers.ipynb`](Gold/gold_dim_customers.ipynb) |
-| **Dimension** | `dim_products` | `silver.crm_products`<br>`silver.erp_product_category` | Enriches CRM products with ERP categories/subcategories. Filters out historical product revisions. | [`gold_dim_products.ipynb`](Gold/gold_dim_products.ipynb) |
-| **Fact** | `fact_sales` | `silver.crm_sales`<br>`gold.dim_products`<br>`gold.dim_customers` | Links transaction details with corresponding surrogate product & customer keys. Generates standard business metrics (total sales amount). | [`gold_fact_sales.ipynb`](Gold/gold_fact_sales.ipynb) |
+| **💎 Dimension** | 👤 `dim_customers` | 📋 `silver.crm_customers`<br>📍 `silver.erp_customers`<br>🗺️ `silver.erp_customer_location` | 🔗 Joins CRM demographic data with ERP location details.<br>🔑 Generates standard surrogate keys (`customer_key`) using row numbers. | 📓 [`gold_dim_customers.ipynb`](Gold/gold_dim_customers.ipynb) |
+| **💎 Dimension** | 📦 `dim_products` | 📋 `silver.crm_products`<br>🗂️ `silver.erp_product_category` | 🔗 Enriches CRM products with ERP categories/subcategories.<br>⏳ Filters out inactive/historical product revisions. | 📓 [`gold_dim_products.ipynb`](Gold/gold_dim_products.ipynb) |
+| **📊 Fact** | 💰 `fact_sales` | 📋 `silver.crm_sales`<br>📦 `gold.dim_products`<br>👤 `gold.dim_customers` | 🔗 Joins transaction details with surrogate dimension keys (`customer_key`, `product_key`).<br>📈 Computes business metric metrics (gross sales amount). | 📓 [`gold_fact_sales.ipynb`](Gold/gold_fact_sales.ipynb) |
 
 > [!TIP]
 > **Orchestration Tool**: Run [`gold_orchestration.ipynb`](Gold/gold_orchestration.ipynb) to execute the dimension and fact notebooks sequentially in the correct dependency order.
