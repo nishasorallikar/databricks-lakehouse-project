@@ -143,53 +143,50 @@ Run the layers sequentially or schedule them as a Databricks Job workflow:
 
 The dimensional model generated in the Gold layer is structured for optimized analytical querying:
 
+```mermaid
+erDiagram
+    dim_customers ||--o{ fact_sales : "joins on customer_key"
+    dim_products ||--o{ fact_sales : "joins on product_key"
+
+    dim_customers {
+        int customer_key PK
+        string customer_id
+        string customer_number
+        string first_name
+        string last_name
+        string country
+        string marital_status
+        string gender
+        date birthdate
+        date create_date
+    }
+
+    dim_products {
+        int product_key PK
+        string product_id
+        string product_number
+        string product_name
+        string category_id
+        string category
+        string subcategory
+        string maintenance_flag
+        string product_line
+        date start_date
+    }
+
+    fact_sales {
+        string order_number
+        int customer_key FK
+        int product_key FK
+        date order_date
+        date ship_date
+        date due_date
+        int quantity
+        double price
+        double sales_amount
+    }
 ```
-                  +-----------------------+
-                  |     dim_customers     |
-                  +-----------------------+
-                  | customer_key (PK)     |<-----+
-                  | customer_id           |      |
-                  | customer_number       |      |
-                  | first_name            |      |
-                  | last_name             |      |
-                  | country               |      |
-                  | marital_status        |      |
-                  | gender                |      |
-                  | birthdate             |      |
-                  | create_date           |      |
-                  +-----------------------+      |
-                                                 |
-                                                 |
-                  +-----------------------+      |
-                  |      fact_sales       |      |
-                  +-----------------------+      |
-                  | order_number          |      |
-                  | customer_key (FK)     |------+
-                  | product_key (FK)      |------+
-                  | order_date            |      |
-                  | ship_date             |      |
-                  | due_date              |      |
-                  | quantity              |      |
-                  | price                 |      |
-                  | sales_amount          |      |
-                  +-----------------------+      |
-                                                 |
-                                                 |
-                  +-----------------------+      |
-                  |     dim_products      |      |
-                  +-----------------------+      |
-                  | product_key (PK)      |<-----+
-                  | product_id            |
-                  | product_number        |
-                  | product_name          |
-                  | category_id           |
-                  | category              |
-                  | subcategory           |
-                  | maintenance_flag      |
-                  | product_line          |
-                  | start_date            |
-                  +-----------------------+
-```
+
 
 ---
 
