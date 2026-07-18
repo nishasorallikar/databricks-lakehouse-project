@@ -131,11 +131,25 @@ Transforms standardized Silver tables into a business-level Dimensional Model op
    ```
    *Within the volume, ensure subdirectories `source_crm/` and `source_erp/` contain the raw CSV files (e.g. `cust_info.csv`, `CUST_AZ12.csv`, etc.).*
 
-### Execution Order
-Run the layers sequentially or schedule them as a Databricks Job workflow:
-1. **Run Ingestion**: Run `Bronze/Bronze_layer_improved.ipynb` to ingest CSV files into Bronze tables.
-2. **Orchestrate Silver**: Run `Silver/silver_orchestration.ipynb` to clean and write all Silver tables.
-3. **Orchestrate Gold**: Run `Gold/gold_orchestration.ipynb` to construct the Dimensional Model.
+Run the layers sequentially or schedule them as a unified Databricks Job workflow:
+
+```mermaid
+graph LR
+    %% Theme styling definitions for execution steps
+    classDef bronzeStep fill:#ffe0b2,stroke:#ff9800,stroke-width:2px,color:#e65100,font-weight:bold;
+    classDef silverStep fill:#e0f7fa,stroke:#00bcd4,stroke-width:2px,color:#006064,font-weight:bold;
+    classDef goldStep fill:#e8f5e9,stroke:#4caf50,stroke-width:2px,color:#1b5e20,font-weight:bold;
+    
+    %% Execution Nodes
+    step1["🟫 Step 1: Raw Ingestion<br/>📓 Bronze_layer_improved.ipynb"]:::bronzeStep
+    step2["⬜ Step 2: Silver Orchestration<br/>📓 silver_orchestration.ipynb"]:::silverStep
+    step3["🟨 Step 3: Gold Orchestration<br/>📓 gold_orchestration.ipynb"]:::goldStep
+
+    %% Workflow connection
+    step1 -->|1. Ingests Raw CSVs| step2
+    step2 -->|2. Cleanses & Standardizes| step3
+```
+
 
 ---
 
