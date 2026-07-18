@@ -143,49 +143,58 @@ Run the layers sequentially or schedule them as a Databricks Job workflow:
 
 The dimensional model generated in the Gold layer is structured for optimized analytical querying:
 
-```mermaid
-erDiagram
-    dim_customers ||--o{ fact_sales : "joins on customer_key"
-    dim_products ||--o{ fact_sales : "joins on product_key"
+<table>
+  <tr>
+    <th align="left" width="33%">👤 dim_customers (Dimension)</th>
+    <th align="left" width="34%">📊 fact_sales (Fact Table)</th>
+    <th align="left" width="33%">📦 dim_products (Dimension)</th>
+  </tr>
+  <tr valign="top">
+    <td>
+      <ul>
+        <li>🔑 <b>customer_key</b> <code>INT (PK)</code></li>
+        <li>🆔 customer_id <code>VARCHAR</code></li>
+        <li>🔢 customer_number <code>VARCHAR</code></li>
+        <li>👤 first_name <code>VARCHAR</code></li>
+        <li>👤 last_name <code>VARCHAR</code></li>
+        <li>🌍 country <code>VARCHAR</code></li>
+        <li>💍 marital_status <code>VARCHAR</code></li>
+        <li>🚻 gender <code>VARCHAR</code></li>
+        <li>📅 birthdate <code>DATE</code></li>
+        <li>📅 create_date <code>DATE</code></li>
+      </ul>
+    </td>
+    <td>
+      <ul>
+        <li>🧾 order_number <code>VARCHAR</code></li>
+        <li>🔗 <b>customer_key</b> <code>INT (FK)</code> ➔ <i>dim_customers</i></li>
+        <li>🔗 <b>product_key</b> <code>INT (FK)</code> ➔ <i>dim_products</i></li>
+        <li>📅 order_date <code>DATE</code></li>
+        <li>📅 ship_date <code>DATE</code></li>
+        <li>📅 due_date <code>DATE</code></li>
+        <li>🔢 quantity <code>INT</code></li>
+        <li>💵 price <code>DECIMAL</code></li>
+        <li>💰 sales_amount <code>DECIMAL</code></li>
+      </ul>
+    </td>
+    <td>
+      <ul>
+        <li>🔑 <b>product_key</b> <code>INT (PK)</code></li>
+        <li>🆔 product_id <code>VARCHAR</code></li>
+        <li>🔢 product_number <code>VARCHAR</code></li>
+        <li>📦 product_name <code>VARCHAR</code></li>
+        <li>🏷️ category_id <code>VARCHAR</code></li>
+        <li>🗂️ category <code>VARCHAR</code></li>
+        <li>🗂️ subcategory <code>VARCHAR</code></li>
+        <li>🔧 maintenance_flag <code>VARCHAR</code></li>
+        <li>📈 product_line <code>VARCHAR</code></li>
+        <li>📅 start_date <code>DATE</code></li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
-    dim_customers {
-        int customer_key PK
-        string customer_id
-        string customer_number
-        string first_name
-        string last_name
-        string country
-        string marital_status
-        string gender
-        date birthdate
-        date create_date
-    }
 
-    dim_products {
-        int product_key PK
-        string product_id
-        string product_number
-        string product_name
-        string category_id
-        string category
-        string subcategory
-        string maintenance_flag
-        string product_line
-        date start_date
-    }
-
-    fact_sales {
-        string order_number
-        int customer_key FK
-        int product_key FK
-        date order_date
-        date ship_date
-        date due_date
-        int quantity
-        double price
-        double sales_amount
-    }
-```
 
 
 ---
