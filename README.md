@@ -143,23 +143,85 @@ Run the layers sequentially or schedule them as a Databricks Job workflow:
 
 The dimensional model generated in the Gold layer is structured for optimized analytical querying:
 
+### 🔗 Star Schema Key Relationships
+
 ```mermaid
-graph LR
-    %% Custom styling definitions for premium look
-    classDef dimTable fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#01579b;
-    classDef factTable fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px,color:#4a148c;
+erDiagram
+    dim_customers ||--o{ fact_sales : "customer_key"
+    dim_products ||--o{ fact_sales : "product_key"
 
-    %% Schema Nodes
-    dim_cust["👤 dim_customers (Dimension)<br/>══════════════════════<br/>🔑 <b>customer_key</b> (INT - PK)<br/>🆔 customer_id (VARCHAR)<br/>🔢 customer_number (VARCHAR)<br/>👤 first_name (VARCHAR)<br/>👤 last_name (VARCHAR)<br/>🌍 country (VARCHAR)<br/>💍 marital_status (VARCHAR)<br/>🚻 gender (VARCHAR)<br/>📅 birthdate (DATE)<br/>📅 create_date (DATE)"]:::dimTable
+    dim_customers {
+        int customer_key PK
+        string customer_id
+        string customer_number
+    }
 
-    dim_prod["📦 dim_products (Dimension)<br/>══════════════════════<br/>🔑 <b>product_key</b> (INT - PK)<br/>🆔 product_id (VARCHAR)<br/>🔢 product_number (VARCHAR)<br/>📦 product_name (VARCHAR)<br/>🏷️ category_id (VARCHAR)<br/>🗂️ category (VARCHAR)<br/>🗂️ subcategory (VARCHAR)<br/>🔧 maintenance_flag (VARCHAR)<br/>📈 product_line (VARCHAR)<br/>📅 start_date (DATE)"]:::dimTable
+    dim_products {
+        int product_key PK
+        string product_id
+        string product_number
+    }
 
-    fact_sales["📊 fact_sales (Fact Table)<br/>══════════════════════<br/>🧾 order_number (VARCHAR)<br/>🔗 <b>customer_key</b> (INT - FK)<br/>🔗 <b>product_key</b> (INT - FK)<br/>📅 order_date (DATE)<br/>📅 ship_date (DATE)<br/>📅 due_date (DATE)<br/>🔢 quantity (INT)<br/>💵 price (DECIMAL)<br/>💰 sales_amount (DECIMAL)"]:::factTable
-
-    %% Relationships
-    dim_cust -->|customer_key| fact_sales
-    dim_prod -->|product_key| fact_sales
+    fact_sales {
+        string order_number
+        int customer_key FK
+        int product_key FK
+    }
 ```
+
+### 📋 Detailed Table Schemas
+
+<details open>
+<summary><b>👤 Dimension: <code>dim_customers</code></b></summary>
+
+* **Description:** Stores customer demographic profiles consolidated from CRM and ERP systems.
+* **Fields:**
+  * 🔑 **`customer_key`** `INT` (PK) - Surrogate key generated via row number sequence.
+  * 🆔 **`customer_id`** `VARCHAR` - Unique CRM customer identifier.
+  * 🔢 **`customer_number`** `VARCHAR` - Standardized customer code for cross-system mapping.
+  * 👤 **`first_name`** / **`last_name`** `VARCHAR` - Standardized and trimmed names.
+  * 🌍 **`country`** `VARCHAR` - Country location mapped from ERP.
+  * 💍 **`marital_status`** `VARCHAR` - Marital status from CRM.
+  * 🚻 **`gender`** `VARCHAR` - Gender (imputed from ERP if missing in CRM).
+  * 📅 **`birthdate`** `DATE` - Birthdate (YYYY-MM-DD).
+  * 📅 **`create_date`** `DATE` - Account creation timestamp.
+
+</details>
+
+<details open>
+<summary><b>📦 Dimension: <code>dim_products</code></b></summary>
+
+* **Description:** Stores product catalog data enriched with category hierarchies.
+* **Fields:**
+  * 🔑 **`product_key`** `INT` (PK) - Surrogate key generated via row number sequence.
+  * 🆔 **`product_id`** `VARCHAR` - Unique CRM product identifier.
+  * 🔢 **`product_number`** `VARCHAR` - Standardized product serial number.
+  * 📦 **`product_name`** `VARCHAR` - Standardized product name.
+  * 🏷️ **`category_id`** `VARCHAR` - Category identifier.
+  * 🗂️ **`category`** / **`subcategory`** `VARCHAR` - ERP category mapping.
+  * 🔧 **`maintenance_flag`** `VARCHAR` - Product maintenance status flag.
+  * 📈 **`product_line`** `VARCHAR` - Active product line classification.
+  * 📅 **`start_date`** `DATE` - Product record activation date.
+
+</details>
+
+<details open>
+<summary><b>📊 Fact Table: <code>fact_sales</code></b></summary>
+
+* **Description:** Captures transactional sales records mapped to customer and product dimensions.
+* **Fields:**
+  * 🧾 **`order_number`** `VARCHAR` - Unique sales transaction identifier.
+  * 🔗 **`customer_key`** `INT` (FK) - Reference linking to `dim_customers`.
+  * 🔗 **`product_key`** `INT` (FK) - Reference linking to `dim_products`.
+  * 📅 **`order_date`** `DATE` - Date of order.
+  * 📅 **`ship_date`** `DATE` - Date of shipment.
+  * 📅 **`due_date`** `DATE` - Payment due date.
+  * 🔢 **`quantity`** `INT` - Units purchased.
+  * 💵 **`price`** `DECIMAL` - Transactional unit price.
+  * 💰 **`sales_amount`** `DECIMAL` - Computed gross sales amount (`quantity` * `price`).
+
+</details>
+
 
 
 
