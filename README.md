@@ -143,53 +143,71 @@ Run the layers sequentially or schedule them as a Databricks Job workflow:
 
 The dimensional model generated in the Gold layer is structured for optimized analytical querying:
 
-### 👤 Dimension: `dim_customers`
+<details open>
+<summary><b>👤 Dimension: <code>dim_customers</code></b></summary>
 
-| Column Name | Data Type | Key Type | Description & Source |
-| :--- | :---: | :---: | :--- |
-| **`customer_key`** | `INT` | 🔑 **PK** | Surrogate key generated during load (via row number) |
-| **`customer_id`** | `VARCHAR` | | Unique Customer ID mapped from CRM system |
-| **`customer_number`** | `VARCHAR` | | Standardized customer business identifier |
-| **`first_name`** | `VARCHAR` | | Customer's first name (standardized & trimmed) |
-| **`last_name`** | `VARCHAR` | | Customer's last name (standardized & trimmed) |
-| **`country`** | `VARCHAR` | | Standardized country location (mapped from ERP spatial lookup) |
-| **`marital_status`** | `VARCHAR` | | Marital status category (mapped from CRM) |
-| **`gender`** | `VARCHAR` | | Gender description (imputed from ERP records if missing in CRM) |
-| **`birthdate`** | `DATE` | | Customer birth date (standardized to YYYY-MM-DD) |
-| **`create_date`** | `DATE` | | Customer account creation timestamp |
+```sql
+-- Gold Layer Customer Dimension Table
+-- Combines CRM customer data with ERP spatial location lookup.
+CREATE TABLE workspace.gold.dim_customers (
+    customer_key    INT           NOT NULL, -- 🔑 PK: Surrogate key (generated via ROW_NUMBER)
+    customer_id     VARCHAR(50)   NOT NULL, -- 🆔 Unique Customer ID (from CRM)
+    customer_number VARCHAR(50)   NOT NULL, -- 🔢 Standardized customer business identifier
+    first_name      VARCHAR(100)  NOT NULL, -- 👤 Customer's first name (trimmed & standardized)
+    last_name       VARCHAR(100)  NOT NULL, -- 👤 Customer's last name (trimmed & standardized)
+    country         VARCHAR(100)  NOT NULL, -- 🌍 Standardized country name (from ERP location lookup)
+    marital_status  VARCHAR(20)   NOT NULL, -- 💍 Marital status (from CRM)
+    gender          VARCHAR(10)   NOT NULL, -- 🚻 Gender (imputed from ERP if missing in CRM)
+    birthdate       DATE          NOT NULL, -- 📅 Standardized birth date (YYYY-MM-DD)
+    create_date     DATE          NOT NULL  -- 📅 Account creation timestamp
+);
+```
 
----
+</details>
 
-### 📦 Dimension: `dim_products`
+<details open>
+<summary><b>📦 Dimension: <code>dim_products</code></b></summary>
 
-| Column Name | Data Type | Key Type | Description & Source |
-| :--- | :---: | :---: | :--- |
-| **`product_key`** | `INT` | 🔑 **PK** | Surrogate key generated during load (via row number) |
-| **`product_id`** | `VARCHAR` | | Unique Product ID mapped from CRM system |
-| **`product_number`** | `VARCHAR` | | Standardized product serial number |
-| **`product_name`** | `VARCHAR` | | Standardized descriptive product name |
-| **`category_id`** | `VARCHAR` | | Product category identifier |
-| **`category`** | `VARCHAR` | | Product primary category classification |
-| **`subcategory`** | `VARCHAR` | | Product subcategory details (mapped from ERP PX) |
-| **`maintenance_flag`** | `VARCHAR` | | Product maintenance status flag |
-| **`product_line`** | `VARCHAR` | | Active product line category mapping |
-| **`start_date`** | `DATE` | | Product record activation date |
+```sql
+-- Gold Layer Product Dimension Table
+-- Enriches CRM products with ERP product categories and subcategories.
+CREATE TABLE workspace.gold.dim_products (
+    product_key      INT           NOT NULL, -- 🔑 PK: Surrogate key (generated via ROW_NUMBER)
+    product_id       VARCHAR(50)   NOT NULL, -- 🆔 Unique Product ID (from CRM)
+    product_number   VARCHAR(50)   NOT NULL, -- 🔢 Standardized product serial number
+    product_name     VARCHAR(150)  NOT NULL, -- 📦 Standardized product name
+    category_id      VARCHAR(50)   NOT NULL, -- 🏷️ Category ID mapping
+    category         VARCHAR(100)  NOT NULL, -- 🗂️ Product primary category (from ERP PX)
+    subcategory      VARCHAR(100)  NOT NULL, -- 🗂️ Product subcategory (from ERP PX)
+    maintenance_flag VARCHAR(10)   NOT NULL, -- 🔧 Maintenance status flag
+    product_line     VARCHAR(50)   NOT NULL, -- 📈 Product line category
+    start_date       DATE          NOT NULL  -- 📅 Record activation date
+);
+```
 
----
+</details>
 
-### 📊 Fact Table: `fact_sales`
+<details open>
+<summary><b>📊 Fact Table: <code>fact_sales</code></b></summary>
 
-| Column Name | Data Type | Key Type | Description & Source |
-| :--- | :---: | :---: | :--- |
-| **`order_number`** | `VARCHAR` | | Unique transactional sales order number |
-| **`customer_key`** | `INT` | 🔗 **FK** | Foreign key linking to [`dim_customers`](#-dimension-dim_customers) |
-| **`product_key`** | `INT` | 🔗 **FK** | Foreign key linking to [`dim_products`](#-dimension-dim_products) |
-| **`order_date`** | `DATE` | | Date the order transaction occurred |
-| **`ship_date`** | `DATE` | | Date the ordered goods were shipped |
-| **`due_date`** | `DATE` | | Payment due date |
-| **`quantity`** | `INT` | | Total number of items purchased in transaction |
-| **`price`** | `DECIMAL` | | Transactional unit price of product |
-| **`sales_amount`** | `DECIMAL` | | Computed gross sales amount (`quantity` * `price`) |
+```sql
+-- Gold Layer Transactional Sales Fact Table
+-- Captures transaction facts joined with customer and product dimension keys.
+CREATE TABLE workspace.gold.fact_sales (
+    order_number     VARCHAR(50)   NOT NULL, -- 🧾 Unique transactional order number
+    customer_key     INT           NOT NULL, -- 🔗 FK: Links to dim_customers.customer_key
+    product_key      INT           NOT NULL, -- 🔗 FK: Links to dim_products.product_key
+    order_date       DATE          NOT NULL, -- 📅 Transaction order date
+    ship_date        DATE,                   -- 📅 Transaction ship date
+    due_date         DATE          NOT NULL, -- 📅 Payment due date
+    quantity         INT           NOT NULL, -- 🔢 Total number of items purchased
+    price            DECIMAL(18,2) NOT NULL, -- 💵 Transactional unit price
+    sales_amount     DECIMAL(18,2) NOT NULL  -- 💰 Computed gross sales amount (quantity * price)
+);
+```
+
+</details>
+
 
 
 
