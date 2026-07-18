@@ -143,56 +143,54 @@ Run the layers sequentially or schedule them as a Databricks Job workflow:
 
 The dimensional model generated in the Gold layer is structured for optimized analytical querying:
 
-<table>
-  <tr>
-    <th align="left" width="33%">👤 dim_customers (Dimension)</th>
-    <th align="left" width="34%">📊 fact_sales (Fact Table)</th>
-    <th align="left" width="33%">📦 dim_products (Dimension)</th>
-  </tr>
-  <tr valign="top">
-    <td>
-      <ul>
-        <li>🔑 <b>customer_key</b> <code>INT (PK)</code></li>
-        <li>🆔 customer_id <code>VARCHAR</code></li>
-        <li>🔢 customer_number <code>VARCHAR</code></li>
-        <li>👤 first_name <code>VARCHAR</code></li>
-        <li>👤 last_name <code>VARCHAR</code></li>
-        <li>🌍 country <code>VARCHAR</code></li>
-        <li>💍 marital_status <code>VARCHAR</code></li>
-        <li>🚻 gender <code>VARCHAR</code></li>
-        <li>📅 birthdate <code>DATE</code></li>
-        <li>📅 create_date <code>DATE</code></li>
-      </ul>
-    </td>
-    <td>
-      <ul>
-        <li>🧾 order_number <code>VARCHAR</code></li>
-        <li>🔗 <b>customer_key</b> <code>INT (FK)</code> ➔ <i>dim_customers</i></li>
-        <li>🔗 <b>product_key</b> <code>INT (FK)</code> ➔ <i>dim_products</i></li>
-        <li>📅 order_date <code>DATE</code></li>
-        <li>📅 ship_date <code>DATE</code></li>
-        <li>📅 due_date <code>DATE</code></li>
-        <li>🔢 quantity <code>INT</code></li>
-        <li>💵 price <code>DECIMAL</code></li>
-        <li>💰 sales_amount <code>DECIMAL</code></li>
-      </ul>
-    </td>
-    <td>
-      <ul>
-        <li>🔑 <b>product_key</b> <code>INT (PK)</code></li>
-        <li>🆔 product_id <code>VARCHAR</code></li>
-        <li>🔢 product_number <code>VARCHAR</code></li>
-        <li>📦 product_name <code>VARCHAR</code></li>
-        <li>🏷️ category_id <code>VARCHAR</code></li>
-        <li>🗂️ category <code>VARCHAR</code></li>
-        <li>🗂️ subcategory <code>VARCHAR</code></li>
-        <li>🔧 maintenance_flag <code>VARCHAR</code></li>
-        <li>📈 product_line <code>VARCHAR</code></li>
-        <li>📅 start_date <code>DATE</code></li>
-      </ul>
-    </td>
-  </tr>
-</table>
+### 👤 Dimension: `dim_customers`
+
+| Column Name | Data Type | Key Type | Description & Source |
+| :--- | :---: | :---: | :--- |
+| **`customer_key`** | `INT` | 🔑 **PK** | Surrogate key generated during load (via row number) |
+| **`customer_id`** | `VARCHAR` | | Unique Customer ID mapped from CRM system |
+| **`customer_number`** | `VARCHAR` | | Standardized customer business identifier |
+| **`first_name`** | `VARCHAR` | | Customer's first name (standardized & trimmed) |
+| **`last_name`** | `VARCHAR` | | Customer's last name (standardized & trimmed) |
+| **`country`** | `VARCHAR` | | Standardized country location (mapped from ERP spatial lookup) |
+| **`marital_status`** | `VARCHAR` | | Marital status category (mapped from CRM) |
+| **`gender`** | `VARCHAR` | | Gender description (imputed from ERP records if missing in CRM) |
+| **`birthdate`** | `DATE` | | Customer birth date (standardized to YYYY-MM-DD) |
+| **`create_date`** | `DATE` | | Customer account creation timestamp |
+
+---
+
+### 📦 Dimension: `dim_products`
+
+| Column Name | Data Type | Key Type | Description & Source |
+| :--- | :---: | :---: | :--- |
+| **`product_key`** | `INT` | 🔑 **PK** | Surrogate key generated during load (via row number) |
+| **`product_id`** | `VARCHAR` | | Unique Product ID mapped from CRM system |
+| **`product_number`** | `VARCHAR` | | Standardized product serial number |
+| **`product_name`** | `VARCHAR` | | Standardized descriptive product name |
+| **`category_id`** | `VARCHAR` | | Product category identifier |
+| **`category`** | `VARCHAR` | | Product primary category classification |
+| **`subcategory`** | `VARCHAR` | | Product subcategory details (mapped from ERP PX) |
+| **`maintenance_flag`** | `VARCHAR` | | Product maintenance status flag |
+| **`product_line`** | `VARCHAR` | | Active product line category mapping |
+| **`start_date`** | `DATE` | | Product record activation date |
+
+---
+
+### 📊 Fact Table: `fact_sales`
+
+| Column Name | Data Type | Key Type | Description & Source |
+| :--- | :---: | :---: | :--- |
+| **`order_number`** | `VARCHAR` | | Unique transactional sales order number |
+| **`customer_key`** | `INT` | 🔗 **FK** | Foreign key linking to [`dim_customers`](#-dimension-dim_customers) |
+| **`product_key`** | `INT` | 🔗 **FK** | Foreign key linking to [`dim_products`](#-dimension-dim_products) |
+| **`order_date`** | `DATE` | | Date the order transaction occurred |
+| **`ship_date`** | `DATE` | | Date the ordered goods were shipped |
+| **`due_date`** | `DATE` | | Payment due date |
+| **`quantity`** | `INT` | | Total number of items purchased in transaction |
+| **`price`** | `DECIMAL` | | Transactional unit price of product |
+| **`sales_amount`** | `DECIMAL` | | Computed gross sales amount (`quantity` * `price`) |
+
 
 
 
