@@ -60,12 +60,12 @@ The entry point of the pipeline ingests external files from Unity Catalog (UC) V
 > * **📁 CRM System Volume Path:** `/Volumes/workspace/bronze/source_systems/source_crm/`
 > * **📁 ERP System Volume Path:** `/Volumes/workspace/bronze/source_systems/source_erp/`
 
-#### 🔄 Ingestion Execution Strategies
+#### Ingestion Execution Strategies
 
 | Strategy | Notebook | Mechanism | Key Benefits |
 | :--- | :--- | :--- | :--- |
-| 📜 **Basic Approach** | 📓 [`Bronze_layer_basic.ipynb`](Bronze/Bronze_layer_basic.ipynb) | 📥 Explicit file-by-file loading via PySpark APIs | 🟢 Easy to debug and troubleshoot<br>🟢 Clean separation of individual scripts |
-| ⚡ **Improved (Recommended)** | 📓 [`Bronze_layer_improved.ipynb`](Bronze/Bronze_layer_improved.ipynb) | ⚙️ Configuration-driven dynamic looping using metadata configs | 🚀 Highly scalable and dynamic<br>🛠️ Low maintenance<br>➕ Add new tables via list updates |
+| Basic Approach | [`Bronze_layer_basic.ipynb`](Bronze/Bronze_layer_basic.ipynb) | Explicit file-by-file loading via PySpark APIs | Easy to debug and troubleshoot<br>Clean separation of individual scripts |
+| Improved (Recommended) | [`Bronze_layer_improved.ipynb`](Bronze/Bronze_layer_improved.ipynb) | Configuration-driven dynamic looping using metadata configs | Highly scalable and dynamic<br>Low maintenance<br>Add new tables via list updates |
 
 *All raw outputs are saved as Delta tables under `workspace.bronze.*` with no transformations applied.*
 
@@ -84,12 +84,13 @@ This layer is responsible for data cleaning, type casting, schema reinforcement,
 
 | Source System | Raw Table (Bronze) | Standardized Table (Silver) | Transformations Applied | Notebook |
 | :---: | :--- | :--- | :--- | :--- |
-| **🏢 CRM** | 📥 `crm_cust_info` | 🧹 `crm_customers` | ✂️ Trims text fields<br>🚫 Drops duplicate entries<br>🧼 Normalizes values | 📓 [`silver_crm_cust_info.ipynb`](Silver/crm/silver_crm_cust_info.ipynb) |
-| **🏢 CRM** | 📥 `crm_prd_info` | 🧹 `crm_products` | 🏷️ Extracts names<br>💳 Casts unit costs to double<br>⏳ Maps active product dates | 📓 [`silver_crm_prd_info.ipynb`](Silver/crm/silver_crm_prd_info.ipynb) |
-| **🏢 CRM** | 📥 `crm_sales_details` | 🧹 `crm_sales` | 💵 Type casts currency fields<br>🔢 Validates quantity > 0<br>🧼 Standardizes formats | 📓 [`silver_crm_sales_details.ipynb`](Silver/crm/silver_crm_sales_details.ipynb) |
-| **🏭 ERP** | 📥 `erp_cust_az12` | 🧹 `erp_customers` | 📅 Formats birthdates to standard YYYY-MM-DD<br>🆔 Aligns customer codes | 📓 [`silver_erp_cust_az12.ipynb`](Silver/erp/silver_erp_cust_az12.ipynb) |
-| **🏭 ERP** | 📥 `erp_loc_a101` | 🧹 `erp_customer_location` | 📍 Standardizes spatial locations<br>🗺️ Normalizes country names | 📓 [`silver_erp_loc_a101.ipynb`](Silver/erp/silver_erp_loc_a101.ipynb) |
-| **🏭 ERP** | 📥 `erp_px_cat_g1v2` | 🧹 `erp_product_category` | 🗂️ Standardizes product categories & subcategories | 📓 [`silver_erp_px_cat_g1v2.ipynb`](Silver/erp/silver_erp_px_cat_g1v2.ipynb) |
+| **CRM** | `crm_cust_info` | `crm_customers` | Trims text fields<br>Drops duplicate entries<br>Normalizes values | [`silver_crm_cust_info.ipynb`](Silver/crm/silver_crm_cust_info.ipynb) |
+| **CRM** | `crm_prd_info` | `crm_products` | Extracts names<br>Casts unit costs to double<br>Maps active product dates | [`silver_crm_prd_info.ipynb`](Silver/crm/silver_crm_prd_info.ipynb) |
+| **CRM** | `crm_sales_details` | `crm_sales` | Type casts currency fields<br>Validates quantity > 0<br>Standardizes formats | [`silver_crm_sales_details.ipynb`](Silver/crm/silver_crm_sales_details.ipynb) |
+| **ERP** | `erp_cust_az12` | `erp_customers` | Formats birthdates to standard YYYY-MM-DD<br>Aligns customer codes | [`silver_erp_cust_az12.ipynb`](Silver/erp/silver_erp_cust_az12.ipynb) |
+| **ERP** | `erp_loc_a101` | `erp_customer_location` | Standardizes spatial locations<br>Normalizes country names | [`silver_erp_loc_a101.ipynb`](Silver/erp/silver_erp_loc_a101.ipynb) |
+| **ERP** | `erp_px_cat_g1v2` | `erp_product_category` | Standardizes product categories & subcategories | [`silver_erp_px_cat_g1v2.ipynb`](Silver/erp/silver_erp_px_cat_g1v2.ipynb) |
+
 
 > [!TIP]
 > **Orchestration Tool**: Use [`silver_orchestration.ipynb`](Silver/silver_orchestration.ipynb) to trigger all six notebooks sequentially using `dbutils.notebook.run`.
