@@ -13,83 +13,8 @@ An end-to-end ELT (Extract, Load, Transform) data engineering project built on t
 
 The pipeline organizes data into three distinct processing layers to guarantee data quality, lineage, and performance:
 
-```mermaid
-graph TD
-    %% Source Systems
-    subgraph Sources [External Source Systems]
-        CRM_Files[CRM CSV Files<br>cust_info, prd_info, sales_details]
-        ERP_Files[ERP CSV Files<br>CUST_AZ12, LOC_A101, PX_CAT_G1V2]
-    end
+![Databricks Lakehouse Medallion Architecture](docs/images/architecture.jpg)
 
-    %% Volumes
-    subgraph UC_Volumes [Databricks Unity Catalog Volumes]
-        Vol_CRM[/Volumes/workspace/bronze/source_systems/source_crm/]
-        Vol_ERP[/Volumes/workspace/bronze/source_systems/source_erp/]
-    end
-
-    %% Bronze Layer
-    subgraph Bronze [Bronze Layer - Raw Ingestion]
-        B_CRM_Cust[crm_cust_info]
-        B_CRM_Prd[crm_prd_info]
-        B_CRM_Sales[crm_sales_details]
-        B_ERP_Cust[erp_cust_az12]
-        B_ERP_Loc[erp_loc_a101]
-        B_ERP_PX[erp_px_cat_g1v2]
-    end
-
-    %% Silver Layer
-    subgraph Silver [Silver Layer - Cleanse & Standardize]
-        S_CRM_Cust[crm_customers]
-        S_CRM_Prd[crm_products]
-        S_CRM_Sales[crm_sales]
-        S_ERP_Cust[erp_customers]
-        S_ERP_Loc[erp_customer_location]
-        S_ERP_PX[erp_product_category]
-    end
-
-    %% Gold Layer
-    subgraph Gold [Gold Layer - Star Schema]
-        G_Dim_Cust[dim_customers]
-        G_Dim_Prd[dim_products]
-        G_Fact_Sales[fact_sales]
-    end
-
-    %% Data Flow Connections
-    CRM_Files -->|Upload| Vol_CRM
-    ERP_Files -->|Upload| Vol_ERP
-
-    Vol_CRM -->|Bronze Ingestion| B_CRM_Cust
-    Vol_CRM -->|Bronze Ingestion| B_CRM_Prd
-    Vol_CRM -->|Bronze Ingestion| B_CRM_Sales
-    
-    Vol_ERP -->|Bronze Ingestion| B_ERP_Cust
-    Vol_ERP -->|Bronze Ingestion| B_ERP_Loc
-    Vol_ERP -->|Bronze Ingestion| B_ERP_PX
-
-    B_CRM_Cust -->|silver_crm_cust_info| S_CRM_Cust
-    B_CRM_Prd -->|silver_crm_prd_info| S_CRM_Prd
-    B_CRM_Sales -->|silver_crm_sales_details| S_CRM_Sales
-    B_ERP_Cust -->|silver_erp_cust_az12| S_ERP_Cust
-    B_ERP_Loc -->|silver_erp_loc_a101| S_ERP_Loc
-    B_ERP_PX -->|silver_erp_px_cat_g1v2| S_ERP_PX
-
-    S_CRM_Cust & S_ERP_Cust & S_ERP_Loc -->|gold_dim_customers| G_Dim_Cust
-    S_CRM_Prd & S_ERP_PX -->|gold_dim_products| G_Dim_Prd
-    S_CRM_Sales & G_Dim_Cust & G_Dim_Prd -->|gold_fact_sales| G_Fact_Sales
-
-    %% Styling
-    classDef source fill:#ffe3f1,stroke:#f50057,stroke-width:2px;
-    classDef volume fill:#e8eaf6,stroke:#3f51b5,stroke-width:2px;
-    classDef bronze fill:#ffe0b2,stroke:#ff9800,stroke-width:1px;
-    classDef silver fill:#e0f7fa,stroke:#00bcd4,stroke-width:1px;
-    classDef gold fill:#e8f5e9,stroke:#4caf50,stroke-width:2px;
-    
-    class CRM_Files,ERP_Files source;
-    class Vol_CRM,Vol_ERP volume;
-    class B_CRM_Cust,B_CRM_Prd,B_CRM_Sales,B_ERP_Cust,B_ERP_Loc,B_ERP_PX bronze;
-    class S_CRM_Cust,S_CRM_Prd,S_CRM_Sales,S_ERP_Cust,S_ERP_Loc,S_ERP_PX silver;
-    class G_Dim_Cust,G_Dim_Prd,G_Fact_Sales gold;
-```
 
 1. **Bronze Layer (Raw Ingestion)**: Ingests raw source CSV files directly from Databricks Unity Catalog Volumes into Delta tables in the `bronze` schema without modifying the schema or values.
 2. **Silver Layer (Cleanse & Standardize)**: Cleans, filters, casts, and normalizes data. Handles missing values, trims whitespace, standardizes casing, and sets proper data types.
