@@ -143,75 +143,24 @@ Run the layers sequentially or schedule them as a Databricks Job workflow:
 
 The dimensional model generated in the Gold layer is structured for optimized analytical querying:
 
-> ### 👤 Customer Profile Dimension (`dim_customers`)
-> *Stores customer demographic records merged from CRM and ERP sources.*
->
-> * 🔑 **`customer_key`** &nbsp;•&nbsp; `INT` &nbsp;•&nbsp; **Primary Key**
->   * *Generated during Gold ingestion using a ROW_NUMBER sequence.*
-> * 🆔 **`customer_id`** &nbsp;•&nbsp; `VARCHAR(50)` &nbsp;•&nbsp; *Source: CRM*
->   * *Unique alphanumeric customer identifier.*
-> * 🔢 **`customer_number`** &nbsp;•&nbsp; `VARCHAR(50)` &nbsp;•&nbsp; *Source: CRM*
->   * *Standardized business identifier for matching across systems.*
-> * 👤 **`first_name`** / **`last_name`** &nbsp;•&nbsp; `VARCHAR(100)` &nbsp;•&nbsp; *Source: CRM*
->   * *Cleaned, trimmed, and capitalized names.*
-> * 🌍 **`country`** &nbsp;•&nbsp; `VARCHAR(100)` &nbsp;•&nbsp; *Source: ERP*
->   * *Normalized country names mapped from geographic coordinates.*
-> * 💍 **`marital_status`** &nbsp;•&nbsp; `VARCHAR(20)` &nbsp;•&nbsp; *Source: CRM*
->   * *Socio-demographic categorization.*
-> * 🚻 **`gender`** &nbsp;•&nbsp; `VARCHAR(10)` &nbsp;•&nbsp; *Source: CRM & ERP*
->   * *Standardized gender indicator (imputed from ERP if missing in CRM).*
-> * 📅 **`birthdate`** &nbsp;•&nbsp; `DATE` &nbsp;•&nbsp; *Source: ERP*
->   * *Cleaned and formatted date of birth (`YYYY-MM-DD`).*
-> * 📅 **`create_date`** &nbsp;•&nbsp; `DATE` &nbsp;•&nbsp; *Source: CRM*
->   * *Timestamp when the customer profile was first generated.*
+```mermaid
+graph LR
+    %% Custom styling definitions for premium look
+    classDef dimTable fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#01579b;
+    classDef factTable fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px,color:#4a148c;
 
----
+    %% Schema Nodes
+    dim_cust["👤 dim_customers (Dimension)<br/>══════════════════════<br/>🔑 <b>customer_key</b> (INT - PK)<br/>🆔 customer_id (VARCHAR)<br/>🔢 customer_number (VARCHAR)<br/>👤 first_name (VARCHAR)<br/>👤 last_name (VARCHAR)<br/>🌍 country (VARCHAR)<br/>💍 marital_status (VARCHAR)<br/>🚻 gender (VARCHAR)<br/>📅 birthdate (DATE)<br/>📅 create_date (DATE)"]:::dimTable
 
-> ### 📦 Product Dimension (`dim_products`)
-> *Stores product catalog details enriched with categories and subcategories.*
->
-> * 🔑 **`product_key`** &nbsp;•&nbsp; `INT` &nbsp;•&nbsp; **Primary Key**
->   * *Generated during Gold ingestion using a ROW_NUMBER sequence.*
-> * 🆔 **`product_id`** &nbsp;•&nbsp; `VARCHAR(50)` &nbsp;•&nbsp; *Source: CRM*
->   * *Unique alphanumeric product identifier.*
-> * 🔢 **`product_number`** &nbsp;•&nbsp; `VARCHAR(50)` &nbsp;•&nbsp; *Source: CRM*
->   * *Standardized product serial code.*
-> * 📦 **`product_name`** &nbsp;•&nbsp; `VARCHAR(150)` &nbsp;•&nbsp; *Source: CRM*
->   * *Standardized descriptive product name.*
-> * 🏷️ **`category_id`** &nbsp;•&nbsp; `VARCHAR(50)` &nbsp;•&nbsp; *Source: CRM*
->   * *Reference ID linking to product category catalog.*
-> * 🗂️ **`category`** / **`subcategory`** &nbsp;•&nbsp; `VARCHAR(100)` &nbsp;•&nbsp; *Source: ERP*
->   * *Normalized category classification hierarchy.*
-> * 🔧 **`maintenance_flag`** &nbsp;•&nbsp; `VARCHAR(10)` &nbsp;•&nbsp; *Source: ERP*
->   * *Binary flag marking product maintenance requirements.*
-> * 📈 **`product_line`** &nbsp;•&nbsp; `VARCHAR(50)` &nbsp;•&nbsp; *Source: CRM*
->   * *Corporate product line categorization.*
-> * 📅 **`start_date`** &nbsp;•&nbsp; `DATE` &nbsp;•&nbsp; *Source: CRM*
->   * *Date when the product record was activated.*
+    dim_prod["📦 dim_products (Dimension)<br/>══════════════════════<br/>🔑 <b>product_key</b> (INT - PK)<br/>🆔 product_id (VARCHAR)<br/>🔢 product_number (VARCHAR)<br/>📦 product_name (VARCHAR)<br/>🏷️ category_id (VARCHAR)<br/>🗂️ category (VARCHAR)<br/>🗂️ subcategory (VARCHAR)<br/>🔧 maintenance_flag (VARCHAR)<br/>📈 product_line (VARCHAR)<br/>📅 start_date (DATE)"]:::dimTable
 
----
+    fact_sales["📊 fact_sales (Fact Table)<br/>══════════════════════<br/>🧾 order_number (VARCHAR)<br/>🔗 <b>customer_key</b> (INT - FK)<br/>🔗 <b>product_key</b> (INT - FK)<br/>📅 order_date (DATE)<br/>📅 ship_date (DATE)<br/>📅 due_date (DATE)<br/>🔢 quantity (INT)<br/>💵 price (DECIMAL)<br/>💰 sales_amount (DECIMAL)"]:::factTable
 
-> ### 📊 Sales Transactions Fact (`fact_sales`)
-> *Captures transaction facts joined with customer and product dimension keys.*
->
-> * 🧾 **`order_number`** &nbsp;•&nbsp; `VARCHAR(50)` &nbsp;•&nbsp; **Transaction Key**
->   * *Unique identifier for each sales receipt or invoice.*
-> * 🔗 **`customer_key`** &nbsp;•&nbsp; `INT` &nbsp;•&nbsp; **Foreign Key**
->   * *Links to customer record in `dim_customers`.*
-> * 🔗 **`product_key`** &nbsp;•&nbsp; `INT` &nbsp;•&nbsp; **Foreign Key**
->   * *Links to product record in `dim_products`.*
-> * 📅 **`order_date`** &nbsp;•&nbsp; `DATE` &nbsp;•&nbsp; *Source: CRM*
->   * *Date when the order transaction took place.*
-> * 📅 **`ship_date`** &nbsp;•&nbsp; `DATE` &nbsp;•&nbsp; *Source: CRM*
->   * *Date the ordered products were dispatched (nullable).*
-> * 📅 **`due_date`** &nbsp;•&nbsp; `DATE` &nbsp;•&nbsp; *Source: CRM*
->   * *Payment due date.*
-> * 🔢 **`quantity`** &nbsp;•&nbsp; `INT` &nbsp;•&nbsp; *Source: CRM*
->   * *Total number of items purchased in transaction.*
-> * 💵 **`price`** &nbsp;•&nbsp; `DECIMAL(18,2)` &nbsp;•&nbsp; *Source: CRM*
->   * *Transactional unit price of the product.*
-> * 💰 **`sales_amount`** &nbsp;•&nbsp; `DECIMAL(18,2)` &nbsp;•&nbsp; **Computed Metric**
->   * *Gross sales amount calculated dynamically: `quantity * price`.*
+    %% Relationships
+    dim_cust -->|customer_key| fact_sales
+    dim_prod -->|product_key| fact_sales
+```
+
 
 
 
