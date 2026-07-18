@@ -104,9 +104,10 @@ Transforms standardized Silver tables into a business-level Dimensional Model op
 
 | Table Type | Table Name | Source Input Tables | Modeling Logic & Key Enhancements | Notebook |
 | :--- | :--- | :--- | :--- | :--- |
-| **💎 Dimension** | 👤 `dim_customers` | 📋 `silver.crm_customers`<br>📍 `silver.erp_customers`<br>🗺️ `silver.erp_customer_location` | 🔗 Joins CRM demographic data with ERP location details.<br>🔑 Generates standard surrogate keys (`customer_key`) using row numbers. | 📓 [`gold_dim_customers.ipynb`](Gold/gold_dim_customers.ipynb) |
-| **💎 Dimension** | 📦 `dim_products` | 📋 `silver.crm_products`<br>🗂️ `silver.erp_product_category` | 🔗 Enriches CRM products with ERP categories/subcategories.<br>⏳ Filters out inactive/historical product revisions. | 📓 [`gold_dim_products.ipynb`](Gold/gold_dim_products.ipynb) |
-| **📊 Fact** | 💰 `fact_sales` | 📋 `silver.crm_sales`<br>📦 `gold.dim_products`<br>👤 `gold.dim_customers` | 🔗 Joins transaction details with surrogate dimension keys (`customer_key`, `product_key`).<br>📈 Computes business metric metrics (gross sales amount). | 📓 [`gold_fact_sales.ipynb`](Gold/gold_fact_sales.ipynb) |
+| **Dimension** | `dim_customers` | `silver.crm_customers`<br>`silver.erp_customers`<br>`silver.erp_customer_location` | Joins CRM demographic data with ERP location details.<br>Generates standard surrogate keys (`customer_key`) using row numbers. | [`gold_dim_customers.ipynb`](Gold/gold_dim_customers.ipynb) |
+| **Dimension** | `dim_products` | `silver.crm_products`<br>`silver.erp_product_category` | Enriches CRM products with ERP categories/subcategories.<br>Filters out inactive/historical product revisions. | [`gold_dim_products.ipynb`](Gold/gold_dim_products.ipynb) |
+| **Fact** | `fact_sales` | `silver.crm_sales`<br>`gold.dim_products`<br>`gold.dim_customers` | Joins transaction details with surrogate dimension keys (`customer_key`, `product_key`).<br>Computes business metric metrics (gross sales amount). | [`gold_fact_sales.ipynb`](Gold/gold_fact_sales.ipynb) |
+
 
 > [!TIP]
 > **Orchestration Tool**: Run [`gold_orchestration.ipynb`](Gold/gold_orchestration.ipynb) to execute the dimension and fact notebooks sequentially in the correct dependency order.
