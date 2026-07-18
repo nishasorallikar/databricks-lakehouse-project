@@ -51,34 +51,66 @@ The pipeline organizes data into three distinct processing layers to guarantee d
 
 ## 🔧 Medallion Layer Pipeline Details
 
-### 1. Bronze Layer (Ingestion)
-* **Ingestion Source**: Files are uploaded to UC Volumes.
-  * CRM path: `/Volumes/workspace/bronze/source_systems/source_crm/`
-  * ERP path: `/Volumes/workspace/bronze/source_systems/source_erp/`
-* **Execution Options**:
-  * **Basic Approach** (`Bronze/Bronze_layer_basic.ipynb`): Sequential manual reading and table-saving logic.
-  * **Improved Approach** (`Bronze/Bronze_layer_improved.ipynb`): Dynamic metadata-driven pipeline that loops through a configuration list mapping sources, file paths, and target tables.
-* **Output**: Delta tables written to `workspace.bronze.*`.
+### 🟫 1. Bronze Layer: Ingestion & Raw Staging
 
-### 2. Silver Layer (Standardization)
-The Silver layer cleanses and normalizes the data:
-* **String Cleaning**: Trims all leading and trailing whitespace on text fields.
-* **Format Correction**: Standardizes dates, IDs, and null representations (e.g., mapping `'n/a'` to default values).
-* **Source Cleansing**:
-  * `crm_customers`: Resolves string trims and outputs to `silver.crm_customers`.
-  * `crm_products`: Cleans product names and handles start/end dates.
-  * `crm_sales`: Extracts dates, quantifies figures, and normalizes column formats.
-  * `erp_customers`: Formats customer birthdates and matches codes.
-  * `erp_customer_location`: Standardizes locations and country columns.
-  * `erp_product_category`: Standardizes product hierarchy and subcategory mapping.
-* **Orchestration**: Managed by `Silver/silver_orchestration.ipynb` using `dbutils.notebook.run`.
+The entry point of the pipeline ingests external files from Unity Catalog (UC) Volumes. It acts as an append-only archive preserving the history of raw datasets.
 
-### 3. Gold Layer (Dimensional Modeling)
-Models the cleansed datasets into an analytical star schema:
-* **`dim_customers`**: Combines CRM customer info with ERP customer codes and locations to output customer keys, demographics, and geographics.
-* **`dim_products`**: Integrates CRM product specifications with ERP category catalogs, providing surrogate product keys.
-* **`fact_sales`**: Joins CRM sales orders with the surrogate dimension keys (`customer_key`, `product_key`) and extracts key transaction metrics (quantity, unit price, total sales amount).
-* **Orchestration**: Managed by `Gold/gold_orchestration.ipynb`.
+> [!NOTE]
+> **Raw Source Data Locations**
+> * **CRM System Volume Path:** `/Volumes/workspace/bronze/source_systems/source_crm/`
+> * **ERP System Volume Path:** `/Volumes/workspace/bronze/source_systems/source_erp/`
+
+#### Ingestion Execution Strategies
+
+| Strategy | Notebook | Mechanism | Key Benefits |
+| :--- | :--- | :--- | :--- |
+| **Basic Approach** | [`Bronze_layer_basic.ipynb`](Bronze/Bronze_layer_basic.ipynb) | Explicit file-by-file loading via PySpark APIs | Easy to debug, clear separation of individual scripts. |
+| **Improved (Recommended)** | [`Bronze_layer_improved.ipynb`](Bronze/Bronze_layer_improved.ipynb) | Configuration-driven dynamic looping using metadata configs | Highly scalable, low maintenance, and easily supports adding new tables. |
+
+*All raw outputs are saved as Delta tables under `workspace.bronze.*` with no transformations applied.*
+
+---
+
+### ⬜ 2. Silver Layer: Cleanse & Standardize
+
+This layer is responsible for data cleaning, type casting, schema reinforcement, and normalizing across CRM and ERP data sources.
+
+#### ⚙️ Data Cleansing Principles
+* 🧹 **String Trimming**: Automatic cleanup of leading/trailing whitespace on all string columns.
+* 📅 **Date Standardization**: Normalization of varying date patterns (e.g. ERP birthdates) to standard SQL dates.
+* 👥 **Null Value Mitigation**: Handling invalid input columns (e.g., mapping gender `'n/a'` values using backup source keys).
+
+#### 📊 Source Transformation Catalog
+
+| Source System | Raw Table (Bronze) | Standardized Table (Silver) | Transformations Applied | Notebook |
+| :---: | :--- | :--- | :--- | :--- |
+| **CRM** | `crm_cust_info` | `crm_customers` | Trims text, drops duplicate entries, cleans values. | [`silver_crm_cust_info.ipynb`](Silver/crm/silver_crm_cust_info.ipynb) |
+| **CRM** | `crm_prd_info` | `crm_products` | Extracts name, casts unit costs, maps active flags. | [`silver_crm_prd_info.ipynb`](Silver/crm/silver_crm_prd_info.ipynb) |
+| **CRM** | `crm_sales_details` | `crm_sales` | Type casts currencies, validates quantity > 0. | [`silver_crm_sales_details.ipynb`](Silver/crm/silver_crm_sales_details.ipynb) |
+| **ERP** | `erp_cust_az12` | `erp_customers` | Standardizes birthdate format, maps IDs. | [`silver_erp_cust_az12.ipynb`](Silver/erp/silver_erp_cust_az12.ipynb) |
+| **ERP** | `erp_loc_a101` | `erp_customer_location` | Normalizes state and country abbreviations. | [`silver_erp_loc_a101.ipynb`](Silver/erp/silver_erp_loc_a101.ipynb) |
+| **ERP** | `erp_px_cat_g1v2` | `erp_product_category` | Standardizes categories hierarchy. | [`silver_erp_px_cat_g1v2.ipynb`](Silver/erp/silver_erp_px_cat_g1v2.ipynb) |
+
+> [!TIP]
+> **Orchestration Tool**: Use [`silver_orchestration.ipynb`](Silver/silver_orchestration.ipynb) to trigger all six notebooks sequentially using `dbutils.notebook.run`.
+
+---
+
+### 🟨 3. Gold Layer: Analytical Star Schema
+
+Transforms standardized Silver tables into a business-level Dimensional Model optimized for analytics, reporting, and BI consumption.
+
+#### 🌟 Star Schema Components
+
+| Table Type | Table Name | Source Input Tables | Modeling Logic & Key Enhancements | Notebook |
+| :--- | :--- | :--- | :--- | :--- |
+| **Dimension** | `dim_customers` | `silver.crm_customers`<br>`silver.erp_customers`<br>`silver.erp_customer_location` | Combines CRM demographic data with ERP spatial location. Introduces surrogate keys (`customer_key`) using row numbers. | [`gold_dim_customers.ipynb`](Gold/gold_dim_customers.ipynb) |
+| **Dimension** | `dim_products` | `silver.crm_products`<br>`silver.erp_product_category` | Enriches CRM products with ERP categories/subcategories. Filters out historical product revisions. | [`gold_dim_products.ipynb`](Gold/gold_dim_products.ipynb) |
+| **Fact** | `fact_sales` | `silver.crm_sales`<br>`gold.dim_products`<br>`gold.dim_customers` | Links transaction details with corresponding surrogate product & customer keys. Generates standard business metrics (total sales amount). | [`gold_fact_sales.ipynb`](Gold/gold_fact_sales.ipynb) |
+
+> [!TIP]
+> **Orchestration Tool**: Run [`gold_orchestration.ipynb`](Gold/gold_orchestration.ipynb) to execute the dimension and fact notebooks sequentially in the correct dependency order.
+
 
 ---
 
