@@ -146,6 +146,18 @@ The dimensional model generated in the Gold layer is structured for optimized an
 ### 🔗 Star Schema Key Relationships
 
 ```mermaid
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#e3f2fd',
+    'primaryTextColor': '#0d47a1',
+    'primaryBorderColor': '#1e88e5',
+    'lineColor': '#8e24aa',
+    'attributeBackgroundColor': '#ffffff',
+    'attributeTextColor': '#1f2937',
+    'keyColor': '#e53935'
+  }
+}}%%
 erDiagram
     dim_customers ||--o{ fact_sales : "customer_key"
     dim_products ||--o{ fact_sales : "product_key"
@@ -168,6 +180,7 @@ erDiagram
         int product_key FK
     }
 ```
+
 
 ### 📋 Detailed Table Schemas
 
