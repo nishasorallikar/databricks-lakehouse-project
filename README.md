@@ -143,70 +143,76 @@ Run the layers sequentially or schedule them as a Databricks Job workflow:
 
 The dimensional model generated in the Gold layer is structured for optimized analytical querying:
 
-<details open>
-<summary><b>👤 Dimension: <code>dim_customers</code></b></summary>
+> ### 👤 Customer Profile Dimension (`dim_customers`)
+> *Stores customer demographic records merged from CRM and ERP sources.*
+>
+> * 🔑 **`customer_key`** &nbsp;•&nbsp; `INT` &nbsp;•&nbsp; **Primary Key**
+>   * *Generated during Gold ingestion using a ROW_NUMBER sequence.*
+> * 🆔 **`customer_id`** &nbsp;•&nbsp; `VARCHAR(50)` &nbsp;•&nbsp; *Source: CRM*
+>   * *Unique alphanumeric customer identifier.*
+> * 🔢 **`customer_number`** &nbsp;•&nbsp; `VARCHAR(50)` &nbsp;•&nbsp; *Source: CRM*
+>   * *Standardized business identifier for matching across systems.*
+> * 👤 **`first_name`** / **`last_name`** &nbsp;•&nbsp; `VARCHAR(100)` &nbsp;•&nbsp; *Source: CRM*
+>   * *Cleaned, trimmed, and capitalized names.*
+> * 🌍 **`country`** &nbsp;•&nbsp; `VARCHAR(100)` &nbsp;•&nbsp; *Source: ERP*
+>   * *Normalized country names mapped from geographic coordinates.*
+> * 💍 **`marital_status`** &nbsp;•&nbsp; `VARCHAR(20)` &nbsp;•&nbsp; *Source: CRM*
+>   * *Socio-demographic categorization.*
+> * 🚻 **`gender`** &nbsp;•&nbsp; `VARCHAR(10)` &nbsp;•&nbsp; *Source: CRM & ERP*
+>   * *Standardized gender indicator (imputed from ERP if missing in CRM).*
+> * 📅 **`birthdate`** &nbsp;•&nbsp; `DATE` &nbsp;•&nbsp; *Source: ERP*
+>   * *Cleaned and formatted date of birth (`YYYY-MM-DD`).*
+> * 📅 **`create_date`** &nbsp;•&nbsp; `DATE` &nbsp;•&nbsp; *Source: CRM*
+>   * *Timestamp when the customer profile was first generated.*
 
-```sql
--- Gold Layer Customer Dimension Table
--- Combines CRM customer data with ERP spatial location lookup.
-CREATE TABLE workspace.gold.dim_customers (
-    customer_key    INT           NOT NULL, -- 🔑 PK: Surrogate key (generated via ROW_NUMBER)
-    customer_id     VARCHAR(50)   NOT NULL, -- 🆔 Unique Customer ID (from CRM)
-    customer_number VARCHAR(50)   NOT NULL, -- 🔢 Standardized customer business identifier
-    first_name      VARCHAR(100)  NOT NULL, -- 👤 Customer's first name (trimmed & standardized)
-    last_name       VARCHAR(100)  NOT NULL, -- 👤 Customer's last name (trimmed & standardized)
-    country         VARCHAR(100)  NOT NULL, -- 🌍 Standardized country name (from ERP location lookup)
-    marital_status  VARCHAR(20)   NOT NULL, -- 💍 Marital status (from CRM)
-    gender          VARCHAR(10)   NOT NULL, -- 🚻 Gender (imputed from ERP if missing in CRM)
-    birthdate       DATE          NOT NULL, -- 📅 Standardized birth date (YYYY-MM-DD)
-    create_date     DATE          NOT NULL  -- 📅 Account creation timestamp
-);
-```
+---
 
-</details>
+> ### 📦 Product Dimension (`dim_products`)
+> *Stores product catalog details enriched with categories and subcategories.*
+>
+> * 🔑 **`product_key`** &nbsp;•&nbsp; `INT` &nbsp;•&nbsp; **Primary Key**
+>   * *Generated during Gold ingestion using a ROW_NUMBER sequence.*
+> * 🆔 **`product_id`** &nbsp;•&nbsp; `VARCHAR(50)` &nbsp;•&nbsp; *Source: CRM*
+>   * *Unique alphanumeric product identifier.*
+> * 🔢 **`product_number`** &nbsp;•&nbsp; `VARCHAR(50)` &nbsp;•&nbsp; *Source: CRM*
+>   * *Standardized product serial code.*
+> * 📦 **`product_name`** &nbsp;•&nbsp; `VARCHAR(150)` &nbsp;•&nbsp; *Source: CRM*
+>   * *Standardized descriptive product name.*
+> * 🏷️ **`category_id`** &nbsp;•&nbsp; `VARCHAR(50)` &nbsp;•&nbsp; *Source: CRM*
+>   * *Reference ID linking to product category catalog.*
+> * 🗂️ **`category`** / **`subcategory`** &nbsp;•&nbsp; `VARCHAR(100)` &nbsp;•&nbsp; *Source: ERP*
+>   * *Normalized category classification hierarchy.*
+> * 🔧 **`maintenance_flag`** &nbsp;•&nbsp; `VARCHAR(10)` &nbsp;•&nbsp; *Source: ERP*
+>   * *Binary flag marking product maintenance requirements.*
+> * 📈 **`product_line`** &nbsp;•&nbsp; `VARCHAR(50)` &nbsp;•&nbsp; *Source: CRM*
+>   * *Corporate product line categorization.*
+> * 📅 **`start_date`** &nbsp;•&nbsp; `DATE` &nbsp;•&nbsp; *Source: CRM*
+>   * *Date when the product record was activated.*
 
-<details open>
-<summary><b>📦 Dimension: <code>dim_products</code></b></summary>
+---
 
-```sql
--- Gold Layer Product Dimension Table
--- Enriches CRM products with ERP product categories and subcategories.
-CREATE TABLE workspace.gold.dim_products (
-    product_key      INT           NOT NULL, -- 🔑 PK: Surrogate key (generated via ROW_NUMBER)
-    product_id       VARCHAR(50)   NOT NULL, -- 🆔 Unique Product ID (from CRM)
-    product_number   VARCHAR(50)   NOT NULL, -- 🔢 Standardized product serial number
-    product_name     VARCHAR(150)  NOT NULL, -- 📦 Standardized product name
-    category_id      VARCHAR(50)   NOT NULL, -- 🏷️ Category ID mapping
-    category         VARCHAR(100)  NOT NULL, -- 🗂️ Product primary category (from ERP PX)
-    subcategory      VARCHAR(100)  NOT NULL, -- 🗂️ Product subcategory (from ERP PX)
-    maintenance_flag VARCHAR(10)   NOT NULL, -- 🔧 Maintenance status flag
-    product_line     VARCHAR(50)   NOT NULL, -- 📈 Product line category
-    start_date       DATE          NOT NULL  -- 📅 Record activation date
-);
-```
+> ### 📊 Sales Transactions Fact (`fact_sales`)
+> *Captures transaction facts joined with customer and product dimension keys.*
+>
+> * 🧾 **`order_number`** &nbsp;•&nbsp; `VARCHAR(50)` &nbsp;•&nbsp; **Transaction Key**
+>   * *Unique identifier for each sales receipt or invoice.*
+> * 🔗 **`customer_key`** &nbsp;•&nbsp; `INT` &nbsp;•&nbsp; **Foreign Key**
+>   * *Links to customer record in `dim_customers`.*
+> * 🔗 **`product_key`** &nbsp;•&nbsp; `INT` &nbsp;•&nbsp; **Foreign Key**
+>   * *Links to product record in `dim_products`.*
+> * 📅 **`order_date`** &nbsp;•&nbsp; `DATE` &nbsp;•&nbsp; *Source: CRM*
+>   * *Date when the order transaction took place.*
+> * 📅 **`ship_date`** &nbsp;•&nbsp; `DATE` &nbsp;•&nbsp; *Source: CRM*
+>   * *Date the ordered products were dispatched (nullable).*
+> * 📅 **`due_date`** &nbsp;•&nbsp; `DATE` &nbsp;•&nbsp; *Source: CRM*
+>   * *Payment due date.*
+> * 🔢 **`quantity`** &nbsp;•&nbsp; `INT` &nbsp;•&nbsp; *Source: CRM*
+>   * *Total number of items purchased in transaction.*
+> * 💵 **`price`** &nbsp;•&nbsp; `DECIMAL(18,2)` &nbsp;•&nbsp; *Source: CRM*
+>   * *Transactional unit price of the product.*
+> * 💰 **`sales_amount`** &nbsp;•&nbsp; `DECIMAL(18,2)` &nbsp;•&nbsp; **Computed Metric**
+>   * *Gross sales amount calculated dynamically: `quantity * price`.*
 
-</details>
-
-<details open>
-<summary><b>📊 Fact Table: <code>fact_sales</code></b></summary>
-
-```sql
--- Gold Layer Transactional Sales Fact Table
--- Captures transaction facts joined with customer and product dimension keys.
-CREATE TABLE workspace.gold.fact_sales (
-    order_number     VARCHAR(50)   NOT NULL, -- 🧾 Unique transactional order number
-    customer_key     INT           NOT NULL, -- 🔗 FK: Links to dim_customers.customer_key
-    product_key      INT           NOT NULL, -- 🔗 FK: Links to dim_products.product_key
-    order_date       DATE          NOT NULL, -- 📅 Transaction order date
-    ship_date        DATE,                   -- 📅 Transaction ship date
-    due_date         DATE          NOT NULL, -- 📅 Payment due date
-    quantity         INT           NOT NULL, -- 🔢 Total number of items purchased
-    price            DECIMAL(18,2) NOT NULL, -- 💵 Transactional unit price
-    sales_amount     DECIMAL(18,2) NOT NULL  -- 💰 Computed gross sales amount (quantity * price)
-);
-```
-
-</details>
 
 
 
