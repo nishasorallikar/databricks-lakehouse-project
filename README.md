@@ -246,7 +246,8 @@ erDiagram
 ---
 
 ## 🛠️ Built With
-* [Databricks Workflows](https://docs.databricks.com/workflows/index.html) - Pipeline scheduling & orchestration.
-* [Delta Lake](https://delta.io/) - Acid Transactions, Time Travel, Schema Enforcement.
-* [Unity Catalog](https://www.databricks.com/product/unity-catalog) - Data governance and volume management.
-* [PySpark SQL](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/index.html) - Data transformation and processing engine.
+* [![Databricks](https://img.shields.io/badge/Databricks_Workflows-FF3621?style=flat-square&logo=databricks&logoColor=white)](https://docs.databricks.com/workflows/index.html) &nbsp;•&nbsp; Pipeline scheduling & orchestration.
+* [![Delta Lake](https://img.shields.io/badge/Delta_Lake-00ADF2?style=flat-square&logo=deltalake&logoColor=white)](https://delta.io/) &nbsp;•&nbsp; Acid Transactions, Time Travel, Schema Enforcement.
+* [![Unity Catalog](https://img.shields.io/badge/Unity_Catalog-FF3621?style=flat-square&logo=databricks&logoColor=white)](https://www.databricks.com/product/unity-catalog) &nbsp;•&nbsp; Data governance and volume management.
+* [![Apache Spark](https://img.shields.io/badge/PySpark_SQL-E25A28?style=flat-square&logo=apachespark&logoColor=white)](https://spark.apache.org/docs/latest/api/python/reference/pyspark.sql/index.html) &nbsp;•&nbsp; Data transformation and processing engine.
+
